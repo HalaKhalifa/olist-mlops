@@ -6,7 +6,7 @@ The project uses the Brazilian E-Commerce Public Dataset by Olist to develop a m
 
 ## Project Status
 
-🚧 In progress — Task 1: Get the Data Into a Database
+Task 1 - Get the Data Into a Database : COMPLETED ✅
 
 ## Dataset
 
