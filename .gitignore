@@ -29,3 +29,10 @@ data/*.zip
 
 # PostgreSQL / local database files
 *.sqlitedb
+
+# Task 2 / ML artifacts
+# Ignore large/generated model and data files.
+
+tasks/task-02-notebooks/artifacts/**/*.pkl
+tasks/task-02-notebooks/artifacts/**/*.joblib
+tasks/task-02-notebooks/artifacts/**/*.parquet
