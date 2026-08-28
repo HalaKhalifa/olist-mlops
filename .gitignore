@@ -15,6 +15,7 @@ env/
 
 # OS
 .DS_Store
+**/.DS_Store
 
 # IDE
 .vscode/
@@ -36,3 +37,4 @@ data/*.zip
 tasks/task-02-notebooks/artifacts/**/*.pkl
 tasks/task-02-notebooks/artifacts/**/*.joblib
 tasks/task-02-notebooks/artifacts/**/*.parquet
+tasks/task-02-notebooks/artifacts/**/*.csv
