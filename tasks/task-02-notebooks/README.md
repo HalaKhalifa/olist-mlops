@@ -39,7 +39,7 @@ Artifacts ensure:
 | Notebook | Purpose | Input | Output Artifacts | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **01 — Read & Join Tables** | Connect to PostgreSQL, inspect all 9 tables, aggregate 1-to-many tables, and join into 1 row per order | PostgreSQL `olist` DB | `01_read_and_join/joined_orders.parquet`<br>`01_read_and_join/joined_orders.csv` | **Completed** |
-| **02 — Create Labels** | Define binary late-delivery target (`is_late`), analyze label distribution, and filter invalid records | `01_read_and_join/` | `02_create_labels/labeled_orders.parquet` | Pending |
+| **02 — Create Labels** | Define binary late-delivery target (`is_late`), analyze label distribution, and filter invalid records | `01_read_and_join/` | `02_create_labels/labeled_orders.parquet` | **Completed** |
 | **03 — Split** | Temporal / stratified train-val-test split to prevent temporal leakage | `02_create_labels/` | `03_split/train.parquet`<br>`03_split/val.parquet`<br>`03_split/test.parquet` | Pending |
 | **04 — EDA** | Exploratory data analysis strictly on the training set; identify signals, correlations, and anomalies | `03_split/train.parquet` | `04_eda/eda_summary.md`<br>`04_eda/figures/` | Pending |
 | **05 — Feature Engineering** | Create domain features, encode categoricals, handle scaling & missing values (fit on train only) | `03_split/` + EDA findings | `05_feature_engineering/X_train.parquet`, etc.<br>`05_feature_engineering/pipeline.joblib` | Pending |
@@ -65,6 +65,7 @@ tasks/task-02-notebooks/
 │   │   ├── joined_orders.parquet            # Master ML table (99,441 rows x 33 columns)
 │   │   └── joined_orders.csv                # Master ML table (CSV format)
 │   ├── 02_create_labels/
+│   │   └── labeled_orders.parquet           # Labeled dataset (96,470 rows x 37 columns)
 │   ├── 03_split/
 │   ├── 04_eda/
 │   ├── 05_feature_engineering/
@@ -141,7 +142,7 @@ jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/01_r
 
 Task 2 is complete when:
 - [x] **01 — Read & Join Tables**: All 9 tables inspected, multi-row tables aggregated, master ML table created (99,441 rows $\times$ 33 columns), Parquet & CSV artifacts saved.
-- [ ] **02 — Create Labels**: Target label `is_late` constructed and distribution analyzed.
+- [x] **02 — Create Labels**: Target label `is_late` constructed, population filtered (96,470 rows), delivery dynamics & class imbalance analyzed, `labeled_orders.parquet` artifact saved.
 - [ ] **03 — Dataset Split**: Train, validation, and test splits created without temporal leakage.
 - [ ] **04 — EDA**: Detailed exploratory analysis conducted on the training set.
 - [ ] **05 — Feature Engineering**: Preprocessing pipeline fitted on train set only and exported.
