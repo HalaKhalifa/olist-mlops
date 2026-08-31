@@ -40,7 +40,7 @@ Artifacts ensure:
 | :--- | :--- | :--- | :--- | :--- |
 | **01 — Read & Join Tables** | Connect to PostgreSQL, inspect all 9 tables, aggregate 1-to-many tables, and join into 1 row per order | PostgreSQL `olist` DB | `01_read_and_join/joined_orders.parquet`<br>`01_read_and_join/joined_orders.csv` | **Completed** |
 | **02 — Create Labels** | Define binary late-delivery target (`is_late`), analyze label distribution, and filter invalid records | `01_read_and_join/` | `02_create_labels/labeled_orders.parquet` | **Completed** |
-| **03 — Split** | Temporal / stratified train-val-test split to prevent temporal leakage | `02_create_labels/` | `03_split/train.parquet`<br>`03_split/val.parquet`<br>`03_split/test.parquet` | Pending |
+| **03 — Split** | Temporal vs. stratified analysis, 70/15/15 stratified random split preserving 8.11% class balance | `02_create_labels/` | `03_split/train.parquet`<br>`03_split/val.parquet`<br>`03_split/test.parquet` | **Completed** |
 | **04 — EDA** | Exploratory data analysis strictly on the training set; identify signals, correlations, and anomalies | `03_split/train.parquet` | `04_eda/eda_summary.md`<br>`04_eda/figures/` | Pending |
 | **05 — Feature Engineering** | Create domain features, encode categoricals, handle scaling & missing values (fit on train only) | `03_split/` + EDA findings | `05_feature_engineering/X_train.parquet`, etc.<br>`05_feature_engineering/pipeline.joblib` | Pending |
 | **06 — Train, Tune & Evaluate** | Train baseline and ML models (LightGBM/XGBoost/RandomForest), hyperparameter tuning, test set evaluation | `05_feature_engineering/` | `06_train_tune_evaluate/model.joblib`<br>`06_train_tune_evaluate/metrics.json` | Pending |
@@ -67,6 +67,9 @@ tasks/task-02-notebooks/
 │   ├── 02_create_labels/
 │   │   └── labeled_orders.parquet           # Labeled dataset (96,470 rows x 37 columns)
 │   ├── 03_split/
+│   │   ├── train.parquet                    # Train split (67,529 rows, 70%)
+│   │   ├── val.parquet                      # Validation split (14,470 rows, 15%)
+│   │   └── test.parquet                     # Test split (14,471 rows, 15%)
 │   ├── 04_eda/
 │   ├── 05_feature_engineering/
 │   └── 06_train_tune_evaluate/
@@ -143,7 +146,7 @@ jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/01_r
 Task 2 is complete when:
 - [x] **01 — Read & Join Tables**: All 9 tables inspected, multi-row tables aggregated, master ML table created (99,441 rows $\times$ 33 columns), Parquet & CSV artifacts saved.
 - [x] **02 — Create Labels**: Target label `is_late` constructed, population filtered (96,470 rows), delivery dynamics & class imbalance analyzed, `labeled_orders.parquet` artifact saved.
-- [ ] **03 — Dataset Split**: Train, validation, and test splits created without temporal leakage.
+- [x] **03 — Dataset Split**: Compared temporal vs stratified splits, implemented 70/15/15 stratified random split (8.11% late rate preserved), saved `train.parquet`, `val.parquet`, `test.parquet`.
 - [ ] **04 — EDA**: Detailed exploratory analysis conducted on the training set.
 - [ ] **05 — Feature Engineering**: Preprocessing pipeline fitted on train set only and exported.
 - [ ] **06 — Train, Tune & Evaluate**: Baseline comparison, hyperparameter tuning, and test set evaluation documented.
