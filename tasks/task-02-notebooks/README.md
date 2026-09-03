@@ -147,7 +147,7 @@ Task 2 is complete when:
 - [x] **01 — Read & Join Tables**: All 9 tables inspected, multi-row tables aggregated, master ML table created (99,441 rows $\times$ 33 columns), Parquet & CSV artifacts saved.
 - [x] **02 — Create Labels**: Target label `is_late` constructed, population filtered (96,470 rows), delivery dynamics & class imbalance analyzed, `labeled_orders.parquet` artifact saved.
 - [x] **03 — Dataset Split**: Compared temporal vs stratified splits, implemented 70/15/15 stratified random split (8.11% late rate preserved), saved `train.parquet`, `val.parquet`, `test.parquet`.
-- [ ] **04 — EDA**: Detailed exploratory analysis conducted on the training set.
-- [ ] **05 — Feature Engineering**: Preprocessing pipeline fitted on train set only and exported.
-- [ ] **06 — Train, Tune & Evaluate**: Baseline comparison, hyperparameter tuning, and test set evaluation documented.
-- [ ] **Task 2 Report**: Written summary explaining split strategy, findings, model performance, and trade-offs.
+- [x] **04 — EDA**: Detailed exploratory analysis conducted on the training set.
+- [x] **05 — Feature Engineering**: Preprocessing pipeline fitted on train set only and exported.
+- [x] **06 — Train, Tune & Evaluate**: Baseline comparison, hyperparameter tuning, and test set evaluation documented.
+- [x] **Task 2 Report**: Written summary explaining split strategy, findings, model performance, and trade-offs.
