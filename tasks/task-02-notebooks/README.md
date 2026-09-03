@@ -132,11 +132,35 @@ DB_PASSWORD=your_password
 
 ### 2. Running Notebooks
 
-Execute notebooks sequentially from Jupyter or CLI:
+Execute all notebooks in strict sequential order from Jupyter or via CLI, as each notebook consumes the artifacts produced by the previous step:
 
 ```bash
-# Execute Notebook 1
+# Notebook 1: Ingestion, grain alignment & denormalization
 jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/01_read_and_join_tables.ipynb --inplace
+
+# Notebook 2: Target definition (is_late) & population eligibility filtering
+jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/02_create_labels.ipynb --inplace
+
+# Notebook 3: Stratified dataset split (train 70%, val 15%, test 15%)
+jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/03_train_validation_test_split.ipynb --inplace
+
+# Notebook 4: Exploratory data analysis strictly on train set
+jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/04_eda.ipynb --inplace
+
+# Notebook 5: Feature engineering & ColumnTransformer pipeline fitting (train fit only)
+jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/05_feature_engineering.ipynb --inplace
+
+# Notebook 6: Baselines, hyperparameter tuning & final test set evaluation
+jupyter nbconvert --to notebook --execute tasks/task-02-notebooks/notebooks/06_train_tune_evaluate.ipynb --inplace
+```
+
+Or execute the complete end-to-end pipeline in one pass:
+
+```bash
+for nb in tasks/task-02-notebooks/notebooks/*.ipynb; do
+  echo "Executing $nb..."
+  jupyter nbconvert --to notebook --execute "$nb" --inplace
+done
 ```
 
 ---
