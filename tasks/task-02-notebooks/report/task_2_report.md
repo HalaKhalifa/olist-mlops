@@ -42,9 +42,9 @@ To enforce a strict 1-to-1 relationship with `orders` (99,441 rows):
 ### 3.1 Target Definition
 The target variable is defined by comparing the actual customer delivery timestamp ($T_{\text{delivered}}$) against the delivery SLA promised at checkout ($T_{\text{estimated}}$):
 
-$$\text{delay\_days} = \frac{T_{\text{delivered}} - T_{\text{estimated}}}{86,400\text{ seconds}}$$
+$$\text{DelayDays} = \frac{T_{\text{delivered}} - T_{\text{estimated}}}{86,400\text{ seconds}}$$
 
-$$\text{is\_late} = \begin{cases} 
+$$y = \begin{cases} 
 1, & \text{if } T_{\text{delivered}} > T_{\text{estimated}} \\ 
 0, & \text{otherwise} 
 \end{cases}$$
@@ -52,7 +52,7 @@ $$\text{is\_late} = \begin{cases}
 Where:
 - $T_{\text{delivered}}$ is the timestamp from `order_delivered_customer_date`
 - $T_{\text{estimated}}$ is the timestamp from `order_estimated_delivery_date`
-- An order is classified as late ($\text{is\_late} = 1$) if actual delivery occurs after the promised date.
+- $y$ is the binary target label (`is_late = 1` if actual delivery occurs after the promised date, `0` otherwise).
 
 ### 3.2 Population Filtering
 - Orders with non-delivered status (`canceled`, `shipped`, `processing`, or `unavailable`) and records with missing customer delivery dates were filtered out.

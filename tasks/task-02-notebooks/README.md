@@ -115,9 +115,9 @@ tasks/task-02-notebooks/
 ### Target Definition
 The late delivery classification target **`is_late`** is derived by comparing the actual customer delivery timestamp ($T_{\text{delivered}}$) against the delivery SLA promised at checkout ($T_{\text{estimated}}$):
 
-$$\text{delay\_days} = \frac{T_{\text{delivered}} - T_{\text{estimated}}}{86,400\text{ seconds}}$$
+$$\text{DelayDays} = \frac{T_{\text{delivered}} - T_{\text{estimated}}}{86,400\text{ seconds}}$$
 
-$$\text{is\_late} = \begin{cases} 
+$$y = \begin{cases} 
 1, & \text{if } T_{\text{delivered}} > T_{\text{estimated}} \\ 
 0, & \text{otherwise} 
 \end{cases}$$
@@ -125,6 +125,7 @@ $$\text{is\_late} = \begin{cases}
 Where:
 - $T_{\text{delivered}}$ is `order_delivered_customer_date`
 - $T_{\text{estimated}}$ is `order_estimated_delivery_date`
+- $y$ is the binary target label (`is_late = 1` for late, `0` for on-time)
 
 ### Population Eligibility Filtering
 - Non-delivered orders (`canceled`, `shipped`, `processing`, or `unavailable`) and records with missing delivery dates were filtered out.
