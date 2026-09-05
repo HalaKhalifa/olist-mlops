@@ -41,9 +41,9 @@ Artifacts ensure:
 | **01 — Read & Join Tables** | Connect to PostgreSQL, inspect all 9 tables, aggregate 1-to-many tables, and join into 1 row per order | PostgreSQL `olist` DB | `01_read_and_join/joined_orders.parquet`<br>`01_read_and_join/joined_orders.csv` | **Completed** |
 | **02 — Create Labels** | Define binary late-delivery target (`is_late`), analyze label distribution, and filter invalid records | `01_read_and_join/` | `02_create_labels/labeled_orders.parquet` | **Completed** |
 | **03 — Split** | Temporal vs. stratified analysis, 70/15/15 stratified random split preserving 8.11% class balance | `02_create_labels/` | `03_split/train.parquet`<br>`03_split/val.parquet`<br>`03_split/test.parquet` | **Completed** |
-| **04 — EDA** | Exploratory data analysis strictly on the training set; identify signals, correlations, and anomalies | `03_split/train.parquet` | `04_eda/eda_summary.md`<br>`04_eda/figures/` | Pending |
-| **05 — Feature Engineering** | Create domain features, encode categoricals, handle scaling & missing values (fit on train only) | `03_split/` + EDA findings | `05_feature_engineering/X_train.parquet`, etc.<br>`05_feature_engineering/pipeline.joblib` | Pending |
-| **06 — Train, Tune & Evaluate** | Train baseline and ML models (LightGBM/XGBoost/RandomForest), hyperparameter tuning, test set evaluation | `05_feature_engineering/` | `06_train_tune_evaluate/model.joblib`<br>`06_train_tune_evaluate/metrics.json` | Pending |
+| **04 — EDA** | Exploratory data analysis strictly on the training set; identify signals, correlations, and anomalies | `03_split/train.parquet` | `04_eda/eda_summary.md`<br>`04_eda/figures/` | **Completed** |
+| **05 — Feature Engineering** | Create domain features, encode categoricals, handle scaling & missing values (fit on train only) | `03_split/` + EDA findings | `05_feature_engineering/X_train.parquet`, etc.<br>`05_feature_engineering/preprocessing_pipeline.joblib` | **Completed** |
+| **06 — Train, Tune & Evaluate** | Train baseline and ML models (Logistic Regression, Random Forest), hyperparameter tuning, test set evaluation | `05_feature_engineering/` | `06_train_tune_evaluate/best_model.joblib`<br>`06_train_tune_evaluate/metrics.json` | **Completed** |
 
 ---
 
@@ -107,6 +107,132 @@ tasks/task-02-notebooks/
    - **Seller Info**: `primary_seller_zip_code`, `primary_seller_city`, `primary_seller_state`, `seller_lat`, `seller_lng`, `num_sellers`
    - **Product & Items**: `item_count`, `total_price`, `avg_item_price`, `total_freight`, `avg_item_freight`, `total_weight_g`, `total_volume_cm3`, `primary_product_category`
    - **Payment Info**: `total_payment_value`, `payment_installments_max`, `payment_transactions_count`, `dominant_payment_type`
+
+---
+
+## Step 2 Deep Dive: Create Labels & Target Eligibility
+
+### Target Definition
+The late delivery classification target **`is_late`** is derived by comparing customer delivery timestamp against the delivery SLA promised at checkout:
+
+$$\text{is\_late} = \begin{cases} 1 & \text{if } \text{order\_delivered\_customer\_date} > \text{order\_estimated\_delivery\_date} \\ 0 & \text{otherwise} \end{cases}$$
+
+### Population Eligibility Filtering
+- Non-delivered orders (`canceled`, `shipped`, `processing`, or `unavailable`) and records with missing delivery dates were filtered out.
+- Orders where `order_delivered_customer_date < order_purchase_timestamp` were flagged and dropped as physical logging anomalies.
+- **Eligible population**: **96,470 orders** (from 99,441 raw orders).
+
+### Class Imbalance Diagnosis
+- **On-Time (`is_late = 0`)**: 88,644 orders (**91.89%**)
+- **Late (`is_late = 1`)**: 7,826 orders (**8.11%**)
+- **Imbalance Ratio**: **11.33 : 1**
+- **Evaluation Takeaway**: Accuracy is a misleading metric (a trivial majority-class classifier scores 91.89% accuracy with 0% late recall). Downstream model selection must prioritize **ROC-AUC**, **PR-AUC**, and minority class **F1 / Recall**.
+- **Artifact**: `02_create_labels/labeled_orders.parquet` (96,470 rows $\times$ 37 columns).
+
+---
+
+## Step 3 Deep Dive: Train / Validation / Test Split Strategy
+
+### Split Strategy Evaluation
+We compared two candidates for dataset partitioning:
+1. **Temporal Cutoff Split**:
+   - Training on historical orders, evaluating on future quarters.
+   - *Finding*: Olist operations experienced a severe external shock in March 2018 due to nationwide Brazilian postal courier strikes (`Correios`), causing late delivery rates to temporarily surge to **21.36%**. A temporal cutoff split creates severe covariate and prior probability shift between partitions (Train: 9.03%, Val: 5.34%, Test: 6.61%), distorting validation reliability.
+2. **Stratified Random Split (Selected Strategy)**:
+   - Partitions orders randomly while strictly preserving the empirical label distribution across all partitions.
+   - Partition ratio: **70% Train (67,529 rows)**, **15% Validation (14,470 rows)**, **15% Test (14,471 rows)** with `random_state=42`.
+   - All three partitions maintain exactly **8.11% late rate** ($\pm 0.00\%$) with zero order ID overlap.
+
+### Leakage Firewall
+- `val.parquet` and `test.parquet` are strictly quarantined.
+- All exploratory data analysis, imputation, scaling, and encoding parameters are derived **exclusively from `train.parquet`**.
+- The test set is held untouched until final model evaluation in Notebook 6.
+
+---
+
+## Step 4 Deep Dive: Exploratory Data Analysis (EDA)
+
+Conducting EDA strictly on the 67,529 training rows revealed key predictive signals:
+1. **Geographic Distance (`haversine_distance_km`)**:
+   - Haversine great-circle distance between customer and seller coordinates correlates positively with late deliveries ($r = +0.071, p < 10^{-10}$).
+2. **Interstate Logistics Friction**:
+   - Deliveries crossing state lines face over **2.4x higher delay rate** (**9.92%** interstate vs. **4.09%** intrastate).
+3. **Regional Disparities**:
+   - North/Northeastern states (`RJ`: 13.4%, `BA`: 14.2%, `MA`: 15.6%) suffer higher delay rates than São Paulo (`SP`: 5.8%).
+4. **Estimated Window Buffer (`estimated_delivery_days`)**:
+   - Longer promised SLA buffers correlate negatively with late deliveries ($r = -0.059$).
+5. **Missing Value Signals**:
+   - Orders with unmapped coordinates experience a **12.2% delay rate** vs. 8.1% for mapped orders (+4.1% difference), indicating remote zip codes face higher logistics friction.
+6. **Artifacts**:
+   - Summary: `04_eda/eda_summary.md`
+   - Saved visual charts in `04_eda/figures/`:
+     - `target_distribution.png`: Class balance overview.
+     - `numeric_distributions_and_boxplots.png`: Feature distributions and IQR outlier bounds.
+     - `correlation_heatmap.png`: Pearson correlation matrix against `is_late`.
+     - `temporal_patterns.png`: Hourly, daily, and longitudinal monthly trend plots.
+     - `geographic_late_rates.png`: State-level and interstate delay comparisons.
+
+---
+
+## Step 5 Deep Dive: Feature Engineering & Preprocessing Pipeline
+
+### Derived Predictive Features
+1. **Haversine Distance**: Great-circle distance in kilometers calculated from customer and seller coordinates:
+   $$d = 2 R \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos \phi_1 \cos \phi_2 \sin^2\left(\frac{\Delta \lambda}{2}\right)}\right)$$
+2. **Temporal Features**: `order_hour`, `order_dayofweek`, `order_month` extracted from `order_purchase_timestamp`.
+3. **Operational Lags**:
+   - `approval_lag_hrs`: Hours from purchase to payment approval.
+   - `carrier_lag_days`: Days from purchase to carrier pickup (measures dispatch delay at carrier handover time).
+
+### Leakage Pruning
+Post-delivery timestamps and targets (`order_delivered_customer_date`, `actual_delivery_days`, `delivery_delay_days`, `order_status`) and high-cardinality IDs are strictly dropped.
+
+### Scikit-Learn `ColumnTransformer` Pipeline
+- **Numeric Pipeline** (18 features): `SimpleImputer(strategy='median')` $\rightarrow$ `StandardScaler()`.
+- **Categorical Pipeline** (4 features: `customer_state`, `primary_seller_state`, `primary_product_category`, `dominant_payment_type`): `SimpleImputer(strategy='most_frequent')` $\rightarrow$ `OneHotEncoder(handle_unknown='ignore')`.
+- **Fit Isolation**: Fitted **strictly on `train_fe`**, generating a final feature dimension of **145 columns**.
+- **Artifacts**:
+   - `05_feature_engineering/X_train.parquet`, `X_val.parquet`, `X_test.parquet`
+   - `05_feature_engineering/y_train.parquet`, `y_val.parquet`, `y_test.parquet`
+   - `05_feature_engineering/preprocessing_pipeline.joblib` (7.9 KB)
+   - `05_feature_engineering/feature_names.txt` (145 features)
+
+---
+
+## Step 6 Deep Dive: Model Training, Tuning & Evaluation
+
+### Benchmark Comparison on Validation Set
+Models were trained on the training split and benchmarked on the held-out validation set (14,470 orders):
+
+| Model | Class Weight | Val ROC-AUC | Val PR-AUC | Val F1 (Late) | Precision (Late) | Recall (Late) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Dummy Baseline** (Majority Class) | N/A | 0.5000 | 0.0811 | 0.0000 | 0.0000 | 0.0000 |
+| **Logistic Regression** (L2) | `balanced` | 0.7788 | 0.3393 | 0.2800 | 0.1770 | 0.6800 |
+| **Tuned Random Forest** | `balanced` | **0.8130** | **0.3617** | **0.3977** | **0.3200** | **0.5200** |
+
+### Hyperparameter Tuning
+Using 3-fold cross validation with ROC-AUC scoring on the training set:
+- **Best Configuration**:
+  - `n_estimators`: 100
+  - `max_depth`: 15
+  - `min_samples_split`: 10
+  - `min_samples_leaf`: 2
+  - `class_weight`: `balanced`
+
+### Final Evaluation on Held-Out Test Set
+The test set (14,471 orders) was touched **exactly once** at the very end using the frozen tuned Random Forest model:
+
+| Metric | Validation Set | Test Set | Generalization Variance ($\Delta$) |
+| :--- | :---: | :---: | :---: |
+| **ROC-AUC** | 0.8130 | **0.8156** | $+0.0026$ |
+| **PR-AUC** | 0.3617 | **0.3528** | $-0.0089$ |
+| **F1-Score (Late Class)** | 0.3977 | **0.3913** | $-0.0064$ |
+| **Precision (Late Class)** | 0.3200 | **0.3100** | $-0.0100$ |
+| **Recall (Late Class)** | 0.5200 | **0.5200** | $0.0000$ |
+
+- **Artifacts**:
+  - `06_train_tune_evaluate/best_model.joblib` (12.9 MB)
+  - `06_train_tune_evaluate/metrics.json`
 
 ---
 
