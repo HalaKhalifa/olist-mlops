@@ -113,9 +113,18 @@ tasks/task-02-notebooks/
 ## Step 2 Deep Dive: Create Labels & Target Eligibility
 
 ### Target Definition
-The late delivery classification target **`is_late`** is derived by comparing customer delivery timestamp against the delivery SLA promised at checkout:
+The late delivery classification target **`is_late`** is derived by comparing the actual customer delivery timestamp ($T_{\text{delivered}}$) against the delivery SLA promised at checkout ($T_{\text{estimated}}$):
 
-$$\text{is\_late} = \begin{cases} 1 & \text{if } \text{order\_delivered\_customer\_date} > \text{order\_estimated\_delivery\_date} \\ 0 & \text{otherwise} \end{cases}$$
+$$\text{delay\_days} = \frac{T_{\text{delivered}} - T_{\text{estimated}}}{86,400\text{ seconds}}$$
+
+$$\text{is\_late} = \begin{cases} 
+1, & \text{if } T_{\text{delivered}} > T_{\text{estimated}} \\ 
+0, & \text{otherwise} 
+\end{cases}$$
+
+Where:
+- $T_{\text{delivered}}$ is `order_delivered_customer_date`
+- $T_{\text{estimated}}$ is `order_estimated_delivery_date`
 
 ### Population Eligibility Filtering
 - Non-delivered orders (`canceled`, `shipped`, `processing`, or `unavailable`) and records with missing delivery dates were filtered out.
