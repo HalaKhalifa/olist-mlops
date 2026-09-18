@@ -80,3 +80,22 @@ def test_api_documentation_accessible(api_client):
     """GET /docs should return 200 OK for OpenAPI Swagger documentation."""
     response = api_client.get("/docs")
     assert response.status_code == status.HTTP_200_OK
+
+
+def test_api_monitoring_summary(api_client):
+    """GET /monitoring should return a drift/latency summary payload."""
+    response = api_client.get("/monitoring")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert "total_predictions" in data
+    assert "active_alerts" in data
+
+
+def test_api_invalid_payment_type_rejected(api_client, sample_order_dict):
+    """POST /predict with an unknown payment type is rejected by validation."""
+    bad_order = sample_order_dict.copy()
+    bad_order["dominant_payment_type"] = "bitcoin"
+
+    response = api_client.post("/predict", json=bad_order)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "detail" in response.json()

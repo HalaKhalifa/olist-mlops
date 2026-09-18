@@ -4,16 +4,20 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 import yaml
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 # Determine project root directory dynamically
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 class ProjectConfig(BaseModel):
     name: str = "olist-late-delivery"
     version: str = "1.0.0"
-    description: str = "Production inference service for predicting late order deliveries"
+    description: str = (
+        "Production inference service for predicting late order deliveries"
+    )
 
 
 class ModelConfig(BaseModel):
@@ -29,10 +33,14 @@ class ModelConfig(BaseModel):
 
 class MLflowConfig(BaseModel):
     tracking_uri: str = Field(
-        default_factory=lambda: os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+        default_factory=lambda: os.getenv(
+            "MLFLOW_TRACKING_URI", "http://localhost:5000"
+        )
     )
     experiment_name: str = Field(
-        default_factory=lambda: os.getenv("MLFLOW_EXPERIMENT_NAME", "olist-late-delivery")
+        default_factory=lambda: os.getenv(
+            "MLFLOW_EXPERIMENT_NAME", "olist-late-delivery"
+        )
     )
     model_registry_name: str = "olist-late-delivery-model"
     model_stage: str = "Production"
@@ -56,12 +64,40 @@ class ValidationConfig(BaseModel):
     min_volume_cm3: float = 0.0
     min_installments: int = 1
     allowed_payment_types: List[str] = [
-        "credit_card", "boleto", "voucher", "debit_card", "not_defined"
+        "credit_card",
+        "boleto",
+        "voucher",
+        "debit_card",
+        "not_defined",
     ]
     allowed_brazilian_states: List[str] = [
-        "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG",
-        "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR",
-        "RS", "SC", "SE", "SP", "TO"
+        "AC",
+        "AL",
+        "AM",
+        "AP",
+        "BA",
+        "CE",
+        "DF",
+        "ES",
+        "GO",
+        "MA",
+        "MG",
+        "MS",
+        "MT",
+        "PA",
+        "PB",
+        "PE",
+        "PI",
+        "PR",
+        "RJ",
+        "RN",
+        "RO",
+        "RR",
+        "RS",
+        "SC",
+        "SE",
+        "SP",
+        "TO",
     ]
 
 
@@ -76,7 +112,9 @@ class AppSettings(BaseModel):
     project_root: Path = PROJECT_ROOT
     host: str = Field(default_factory=lambda: os.getenv("API_HOST", "0.0.0.0"))
     port: int = Field(default_factory=lambda: int(os.getenv("API_PORT", "8000")))
-    environment: str = Field(default_factory=lambda: os.getenv("ENVIRONMENT", "development"))
+    environment: str = Field(
+        default_factory=lambda: os.getenv("ENVIRONMENT", "development")
+    )
     project: ProjectConfig = Field(default_factory=ProjectConfig)
     model: ModelConfig = Field(default_factory=ModelConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
@@ -85,7 +123,9 @@ class AppSettings(BaseModel):
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
 
 
-def load_settings(yaml_path: Path = PROJECT_ROOT / "config" / "config.yaml") -> AppSettings:
+def load_settings(
+    yaml_path: Path = PROJECT_ROOT / "config" / "config.yaml",
+) -> AppSettings:
     """Load configuration from config.yaml and environment variables."""
     overrides: Dict[str, Any] = {}
     if yaml_path.exists():
@@ -96,23 +136,37 @@ def load_settings(yaml_path: Path = PROJECT_ROOT / "config" / "config.yaml") -> 
             overrides["project"] = ProjectConfig(**raw_yaml["project"])
         if "model" in raw_yaml:
             model_dict = raw_yaml["model"].copy()
-            for key in ["model_path", "preprocessor_path", "feature_names_path", "metrics_path"]:
+            for key in [
+                "model_path",
+                "preprocessor_path",
+                "feature_names_path",
+                "metrics_path",
+            ]:
                 if key in model_dict:
                     model_dict[key] = PROJECT_ROOT / model_dict[key]
             overrides["model"] = ModelConfig(**model_dict)
         if "mlflow" in raw_yaml:
-            overrides["mlflow"] = MLflowConfig(**raw_yaml["mlflow"])
+            mlflow_dict = raw_yaml["mlflow"].copy()
+            if os.getenv("MLFLOW_TRACKING_URI"):
+                mlflow_dict["tracking_uri"] = os.getenv("MLFLOW_TRACKING_URI")
+            if os.getenv("MLFLOW_EXPERIMENT_NAME"):
+                mlflow_dict["experiment_name"] = os.getenv("MLFLOW_EXPERIMENT_NAME")
+            overrides["mlflow"] = MLflowConfig(**mlflow_dict)
         if "logging" in raw_yaml:
             log_dict = raw_yaml["logging"].copy()
             if "log_file" in log_dict:
                 log_dict["log_file"] = PROJECT_ROOT / log_dict["log_file"]
             if "prediction_log_file" in log_dict:
-                log_dict["prediction_log_file"] = PROJECT_ROOT / log_dict["prediction_log_file"]
+                log_dict["prediction_log_file"] = (
+                    PROJECT_ROOT / log_dict["prediction_log_file"]
+                )
             overrides["logging"] = LoggingConfig(**log_dict)
         if "validation" in raw_yaml:
             overrides["validation"] = ValidationConfig(**raw_yaml["validation"])
         if "monitoring" in raw_yaml and "alert_thresholds" in raw_yaml["monitoring"]:
-            overrides["monitoring"] = MonitoringConfig(**raw_yaml["monitoring"]["alert_thresholds"])
+            overrides["monitoring"] = MonitoringConfig(
+                **raw_yaml["monitoring"]["alert_thresholds"]
+            )
 
     return AppSettings(**overrides)
 

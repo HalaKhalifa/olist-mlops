@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class OrderInput(BaseModel):
     """Schema representing an incoming order for late delivery prediction."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
 
     order_id: Optional[str] = Field(
         default="sample_order_001",
@@ -183,7 +183,9 @@ class PredictionResponse(BaseModel):
     order_id: str
     prediction: int = Field(description="Binary late indicator: 1 = Late, 0 = On-Time")
     label: str = Field(description="Human readable outcome: 'late' or 'on_time'")
-    late_probability: float = Field(description="Estimated probability of late delivery in [0, 1]")
+    late_probability: float = Field(
+        description="Estimated probability of late delivery in [0, 1]"
+    )
     model_name: str
     model_version: str
     latency_ms: float = Field(description="Inference latency in milliseconds")
@@ -218,3 +220,21 @@ class ModelInfoResponse(BaseModel):
     hyperparameters: Dict[str, Any]
     validation_metrics: Dict[str, float]
     test_metrics: Dict[str, float]
+
+
+class MonitoringSummaryResponse(BaseModel):
+    """Live prediction-log summary used for drift and latency alerts."""
+
+    timestamp: str
+    total_predictions: int
+    late_count: int = 0
+    on_time_count: int = 0
+    current_late_rate: float = 0.0
+    baseline_late_rate: float = 0.0
+    rate_difference: float = 0.0
+    drift_detected: bool = False
+    mean_probability: float = 0.0
+    mean_latency_ms: float = 0.0
+    p95_latency_ms: float = 0.0
+    active_alerts: List[str] = []
+    message: Optional[str] = None

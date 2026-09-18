@@ -14,7 +14,9 @@ from src.predict import prediction_service
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
-    logger.info(f"Starting {settings.project.name} v{settings.project.version} ({settings.environment})")
+    logger.info(
+        f"Starting {settings.project.name} v{settings.project.version} ({settings.environment})"
+    )
     try:
         # Preload model and preprocessor at startup
         _ = prediction_service.model

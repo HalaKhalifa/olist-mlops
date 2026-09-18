@@ -2,9 +2,11 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   lint:
@@ -26,12 +28,10 @@ jobs:
           pip install flake8 black
 
       - name: Run Black Code Format Check
-        run: |
-          black --check --diff app/ config/ src/ tests/
+        run: black --check --diff app/ config/ src/ tests/
 
       - name: Run Flake8 Linter
-        run: |
-          flake8 app/ config/ src/ tests/ --max-line-length=120 --extend-ignore=E203,W503
+        run: flake8 app/ config/ src/ tests/ --max-line-length=120 --extend-ignore=E203,W503
 
   test:
     name: Unit & Integration Tests
@@ -53,12 +53,11 @@ jobs:
           pip install -r requirements/requirements.txt
           pip install -r requirements/requirements-dev.txt
 
-      - name: Execute Pytest Suite (A failing test stops the pipeline)
-        run: |
-          pytest -v --cov=src --cov=app
+      - name: Execute Pytest Suite
+        run: pytest -v --cov=src --cov=app
 
   build-and-push:
-    name: Build Production Docker Image
+    name: Build and Push Production Image
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -68,18 +67,54 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker Image
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+
+      - name: Build image for pull-request smoke test
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: false
-          tags: olist-mlops-api:latest
           load: true
+          tags: olist-mlops-api:latest
 
-      - name: Test Container Health Check
+      - name: Smoke-test container health
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         run: |
           docker run -d --name test-api -p 8000:8000 olist-mlops-api:latest
-          sleep 10
-          curl -f http://localhost:8000/health || (docker logs test-api && exit 1)
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://localhost:8000/health; then
+              docker stop test-api
+              exit 0
+            fi
+            sleep 3
+          done
+          docker logs test-api
           docker stop test-api
+          exit 1
+
+      - name: Build and push image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

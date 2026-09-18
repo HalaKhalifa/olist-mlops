@@ -51,10 +51,15 @@ class PredictionService:
         # 1. Check MLflow Model Registry if tracking URI is configured
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI", settings.mlflow.tracking_uri)
         try:
+            import mlflow
             import mlflow.sklearn
+
             mlflow.set_tracking_uri(tracking_uri)
-            model_uri = f"models:/{settings.mlflow.model_registry_name}/{settings.mlflow.model_stage}"
-            logger.info(f"Attempting to load model from MLflow Model Registry: {model_uri}")
+            registry_name = settings.mlflow.model_registry_name
+            model_uri = f"models:/{registry_name}/{settings.mlflow.model_stage}"
+            logger.info(
+                f"Attempting to load model from MLflow Model Registry: {model_uri}"
+            )
             model = mlflow.sklearn.load_model(model_uri)
             logger.info("Successfully loaded model from MLflow Model Registry.")
             return model
@@ -158,7 +163,9 @@ class PredictionService:
             log_path.parent.mkdir(parents=True, exist_ok=True)
             record = {
                 "timestamp": datetime.utcnow().isoformat() + "Z",
-                "input": {k: v for k, v in input_payload.items() if k not in ["order_id"]},
+                "input": {
+                    k: v for k, v in input_payload.items() if k not in ["order_id"]
+                },
                 "output": output_payload,
             }
             with open(log_path, "a", encoding="utf-8") as f:
@@ -185,7 +192,7 @@ def main():
 
     input_path = Path(args.input)
     if not input_path.exists():
-        print(f"Error: Input file not found at {input_path}", file=sys.stderr)
+        logger.error(f"Input file not found at {input_path}")
         sys.exit(1)
 
     with open(input_path, "r", encoding="utf-8") as f:
@@ -193,15 +200,15 @@ def main():
 
     if isinstance(data, dict) and "orders" in data:
         results = prediction_service.predict_batch(data["orders"])
-        print(json.dumps(results, indent=2))
+        sys.stdout.write(json.dumps(results, indent=2) + "\n")
     elif isinstance(data, list):
         results = prediction_service.predict_batch(data)
-        print(json.dumps(results, indent=2))
+        sys.stdout.write(json.dumps(results, indent=2) + "\n")
     elif isinstance(data, dict):
         result = prediction_service.predict_single(data)
-        print(json.dumps(result, indent=2))
+        sys.stdout.write(json.dumps(result, indent=2) + "\n")
     else:
-        print("Invalid JSON structure in input file.", file=sys.stderr)
+        logger.error("Invalid JSON structure in input file.")
         sys.exit(1)
 
 

@@ -37,9 +37,13 @@ class ModelMonitor:
                             "order_id": record.get("output", {}).get("order_id"),
                             "prediction": record.get("output", {}).get("prediction"),
                             "label": record.get("output", {}).get("label"),
-                            "late_probability": record.get("output", {}).get("late_probability"),
+                            "late_probability": record.get("output", {}).get(
+                                "late_probability"
+                            ),
                             "latency_ms": record.get("output", {}).get("latency_ms"),
-                            "model_version": record.get("output", {}).get("model_version"),
+                            "model_version": record.get("output", {}).get(
+                                "model_version"
+                            ),
                         }
                         records.append(flat_record)
                     except json.JSONDecodeError:
@@ -57,7 +61,20 @@ class ModelMonitor:
         df = self.load_prediction_logs()
         if df.empty:
             return {
+                "timestamp": datetime.utcnow().isoformat() + "Z",
                 "total_predictions": 0,
+                "late_count": 0,
+                "on_time_count": 0,
+                "current_late_rate": 0.0,
+                "baseline_late_rate": round(
+                    self.monitoring_config.baseline_late_rate, 4
+                ),
+                "rate_difference": 0.0,
+                "drift_detected": False,
+                "mean_probability": 0.0,
+                "mean_latency_ms": 0.0,
+                "p95_latency_ms": 0.0,
+                "active_alerts": [],
                 "message": "No prediction logs recorded yet.",
             }
 
@@ -107,5 +124,7 @@ model_monitor = ModelMonitor()
 
 
 if __name__ == "__main__":
+    import sys
+
     metrics = model_monitor.compute_summary_metrics()
-    print(json.dumps(metrics, indent=2))
+    sys.stdout.write(json.dumps(metrics, indent=2) + "\n")

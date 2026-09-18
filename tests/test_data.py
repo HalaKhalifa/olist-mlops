@@ -49,3 +49,13 @@ def test_is_late_leakage_rejected(sample_order_dict):
     is_valid, errors = data_validator.validate(leaky_order)
     assert is_valid is False
     assert any("is_late" in e for e in errors)
+
+
+def test_missing_required_column_rejected(sample_order_dict):
+    """Orders missing required schema fields must be rejected."""
+    bad_order = sample_order_dict.copy()
+    del bad_order["order_estimated_delivery_date"]
+
+    is_valid, errors = data_validator.validate(bad_order)
+    assert is_valid is False
+    assert any("order_estimated_delivery_date" in e for e in errors)

@@ -20,5 +20,8 @@
   "baseline": {
     "dummy_roc_auc": 0.5,
     "lr_roc_auc": 0.7788
-  }
+  },
+  "accuracy": 0.8622,
+  "f1": 0.3983,
+  "roc_auc": 0.8206
 }

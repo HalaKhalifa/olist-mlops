@@ -18,11 +18,13 @@ from app.schemas import (
     BatchPredictionResponse,
     HealthResponse,
     ModelInfoResponse,
+    MonitoringSummaryResponse,
     OrderInput,
     PredictionResponse,
 )
 from config.logging_config import logger
 from config.settings import settings
+from src.monitor import model_monitor
 from src.predict import prediction_service
 from src.preprocess import preprocessor_service
 from src.utils import load_json
@@ -177,6 +179,17 @@ def predict_batch_orders(batch: BatchOrderInput) -> BatchPredictionResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch inference error: {str(e)}",
         )
+
+
+@router.get(
+    "/monitoring",
+    response_model=MonitoringSummaryResponse,
+    summary="Prediction-log drift and latency summary",
+    tags=["Monitoring"],
+)
+def monitoring_summary() -> MonitoringSummaryResponse:
+    """Summarize stored prediction logs for drift and latency alerts."""
+    return MonitoringSummaryResponse(**model_monitor.compute_summary_metrics())
 
 
 @router.get(

@@ -73,9 +73,7 @@ def haversine_km(
 ) -> np.ndarray:
     """Calculate great-circle distance between two points on Earth in kilometers."""
     radius = 6371.0
-    lat1_rad, lon1_rad, lat2_rad, lon2_rad = map(
-        np.radians, [lat1, lon1, lat2, lon2]
-    )
+    lat1_rad, lon1_rad, lat2_rad, lon2_rad = map(np.radians, [lat1, lon1, lat2, lon2])
     dlat = lat2_rad - lat1_rad
     dlon = lon2_rad - lon1_rad
     a = (
@@ -122,7 +120,10 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     elif "approval_lag_hrs" not in df.columns:
         df["approval_lag_hrs"] = np.nan
 
-    if "order_delivered_carrier_date" in df.columns and "order_purchase_timestamp" in df.columns:
+    if (
+        "order_delivered_carrier_date" in df.columns
+        and "order_purchase_timestamp" in df.columns
+    ):
         df["carrier_lag_days"] = (
             df["order_delivered_carrier_date"] - df["order_purchase_timestamp"]
         ).dt.total_seconds() / 86400.0
@@ -131,7 +132,10 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # 3. Estimated delivery window
     if "estimated_delivery_days" not in df.columns:
-        if "order_estimated_delivery_date" in df.columns and "order_purchase_timestamp" in df.columns:
+        if (
+            "order_estimated_delivery_date" in df.columns
+            and "order_purchase_timestamp" in df.columns
+        ):
             df["estimated_delivery_days"] = (
                 df["order_estimated_delivery_date"] - df["order_purchase_timestamp"]
             ).dt.total_seconds() / 86400.0

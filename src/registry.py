@@ -72,7 +72,9 @@ def register_model_with_mlflow(
         if preprocessor_path.exists():
             mlflow.log_artifact(str(preprocessor_path), artifact_path="preprocessor")
         if settings.model.feature_names_path.exists():
-            mlflow.log_artifact(str(settings.model.feature_names_path), artifact_path="features")
+            mlflow.log_artifact(
+                str(settings.model.feature_names_path), artifact_path="features"
+            )
 
         # Log model with signature and input example if available
         model_name = settings.mlflow.model_registry_name
@@ -88,8 +90,8 @@ def register_model_with_mlflow(
         # Transition model version to Production stage
         try:
             from mlflow.tracking import MlflowClient
+
             client = MlflowClient(tracking_uri=uri)
-            # Find latest version registered
             latest_versions = client.get_latest_versions(model_name)
             if latest_versions:
                 version = latest_versions[-1].version
@@ -99,9 +101,15 @@ def register_model_with_mlflow(
                     stage="Production",
                     archive_existing_versions=True,
                 )
-                logger.info(f"Successfully transitioned model '{model_name}' version {version} to Production stage.")
+                logger.info(
+                    "Successfully transitioned model '%s' version %s to Production.",
+                    model_name,
+                    version,
+                )
         except Exception as e:
-            logger.warning(f"Could not transition model version stage via MlflowClient: {e}")
+            logger.warning(
+                f"Could not transition model version stage via MlflowClient: {e}"
+            )
 
     logger.info("MLflow model logging and registration process completed.")
 
