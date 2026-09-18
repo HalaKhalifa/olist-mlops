@@ -48,7 +48,13 @@ class PredictionService:
 
     def _load_model(self) -> Any:
         """Attempt loading from MLflow registry; fallback to local joblib file."""
-        # 1. Check MLflow Model Registry if tracking URI is configured
+        # The registry is a production dependency. Local development and tests
+        # must remain runnable without a live MLflow server.
+        if settings.environment != "production":
+            logger.info("Development mode: loading local model artifact.")
+            return load_artifact(self.model_path)
+
+        # 1. Check MLflow Model Registry in production
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI", settings.mlflow.tracking_uri)
         try:
             import mlflow

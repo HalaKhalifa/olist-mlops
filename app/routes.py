@@ -3,7 +3,7 @@
 import time
 from typing import Any, Dict
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
 from app.monitoring import (
     PREDICTED_PROBABILITY_HISTOGRAM,
@@ -31,6 +31,12 @@ from src.utils import load_json
 from src.validation import data_validator
 
 router = APIRouter()
+
+
+@router.get("/", include_in_schema=False)
+def api_root() -> RedirectResponse:
+    """Send browser visitors to the interactive API documentation."""
+    return RedirectResponse(url="/docs")
 
 
 @router.get(

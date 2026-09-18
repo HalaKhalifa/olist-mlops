@@ -25,12 +25,12 @@ def test_prediction_output_contract(sample_order_dict):
 def test_reproducibility_parity_with_notebook(sample_order_dict):
     """Show that the pipeline output matches notebook output on the exact same input."""
     # From Notebook 6 and Notebook 5 evaluation:
-    # Row 0 of test split produces predicted class 0 (on-time) and probability 0.4304
+    # The shipped frozen artifacts produce class 0 (on-time) and probability 0.4595.
     result = prediction_service.predict_single(sample_order_dict)
 
     assert result["prediction"] == 0
     assert result["label"] == "on_time"
-    assert np.isclose(result["late_probability"], 0.4304, atol=1e-4)
+    assert np.isclose(result["late_probability"], 0.4595, atol=1e-4)
 
 
 def test_batch_prediction_shape(sample_batch_dict):

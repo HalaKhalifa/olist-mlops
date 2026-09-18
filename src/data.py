@@ -4,7 +4,6 @@ import pandas as pd
 
 from config.logging_config import logger
 
-
 # Raw order schema columns expected for feature engineering
 EXPECTED_RAW_COLUMNS = [
     "order_purchase_timestamp",

@@ -3,6 +3,13 @@
 from starlette import status
 
 
+def test_api_root_redirects_to_docs(api_client):
+    """GET / should guide browser users to Swagger documentation."""
+    response = api_client.get("/", follow_redirects=False)
+    assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+    assert response.headers["location"] == "/docs"
+
+
 def test_api_health_check(api_client):
     """GET /health should return 200 OK with healthy status and model_loaded True."""
     response = api_client.get("/health")

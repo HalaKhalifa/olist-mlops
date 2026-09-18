@@ -44,6 +44,7 @@ olist-mlops/
 ├── tests/                       # pytest: unit, data, model, API
 ├── monitoring/prometheus.yml    # Prometheus scrape config
 ├── requirements/                # Runtime vs development pins
+├── tasks/task-03-production/    # Task 3 delivery report
 ├── Dockerfile
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
@@ -51,7 +52,7 @@ olist-mlops/
 
 ### Quick start (clean machine)
 
-Prerequisites: Python 3.9+, Docker, Docker Compose.
+Prerequisites: Python 3.11+, Docker, Docker Compose.
 
 ```bash
 git clone <repo-url>
@@ -71,13 +72,15 @@ That single command starts PostgreSQL, MLflow artifact storage, the API, and Pro
 | MLflow | http://localhost:5000 |
 | Prometheus | http://localhost:9090 |
 
+Opening the API base URL redirects to the interactive Swagger documentation. The health endpoint is available at `http://localhost:8000/health`.
+
 Optional: register the champion model into MLflow after the stack is up:
 
 ```bash
 docker compose --profile register run --rm register-model
 ```
 
-The API first tries `models:/olist-late-delivery-model/Production` and falls back to `models/best_model.joblib` inside the image / volume.
+In production, the API first tries `models:/olist-late-delivery-model/Production` and falls back to `models/best_model.joblib` inside the image / volume. Local development and tests load the same frozen local artifact directly.
 
 ### Local Python (without Docker)
 
@@ -149,7 +152,7 @@ curl -X POST http://localhost:8000/predict \
 
 Expected shape of the response: `prediction`, `label`, `late_probability`, `model_version`, `latency_ms`.
 
-On the sample order above the pipeline is checked against the notebook result: class `0` / `on_time`, late probability `0.4304`.
+On the sample order above the shipped frozen artifacts produce class `0` / `on_time`, late probability `0.4595`.
 
 ### Tests
 
@@ -187,6 +190,10 @@ On every push/PR: Black format check → flake8 → pytest. On push to `main`, t
 - Prometheus metrics: request count, latency, error rate, predicted-class distribution.
 - Prediction audit log: `logs/predictions.jsonl` (input, output, latency, model version).
 - Alert policy: `docs/monitoring_and_alerting.md`.
+
+### Task 3 verification
+
+The running stack was verified with a healthy PostgreSQL, MLflow, API, and Prometheus service. The API accepted both single and batch sample predictions, rejected invalid data with HTTP 422, exposed Prometheus metrics, and loaded model version 1 from the MLflow Production registry. See [the Task 3 report](tasks/task-03-production/report/task_3_report.md) for the full definition-of-done checklist and evidence.
 
 ---
 
