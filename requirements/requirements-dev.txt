@@ -1,0 +1,15 @@
+# Development, Testing, Model Tracking, and Quality Assurance Dependencies
+-r requirements.txt
+
+# Testing & Quality
+pytest==7.1.1
+pytest-cov>=4.0.0
+httpx==0.28.1
+flake8==3.9.2
+black>=22.0.0
+pre-commit>=3.0.0
+
+# Experiment Tracking & Validation & Versioning
+mlflow-skinny>=2.10.0
+great-expectations>=0.18.0,<1.0.0
+dvc>=3.0.0

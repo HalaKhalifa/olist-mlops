@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  # 1. PostgreSQL Database Service
+  db:
+    image: postgres:14-alpine
+    container_name: olist_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-olist}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_secret_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-olist}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - olist_net
+
+  # 2. MLflow Experiment Tracking & Model Registry Service
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    container_name: olist_mlflow
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_HOME=/mlflow
+    volumes:
+      - mlflow_data:/mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - olist_net
+
+  # 3. FastAPI Inference Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: olist_api
+    restart: always
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - ENVIRONMENT=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-olist}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres_secret_password}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=olist-late-delivery
+    depends_on:
+      db:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - olist_net
+
+networks:
+  olist_net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  mlflow_data:

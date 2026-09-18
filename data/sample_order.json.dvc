@@ -1,0 +1,5 @@
+outs:
+- md5: 5bf7e84dc0029c63adf950b7f21033b6
+  size: 1072
+  hash: md5
+  path: sample_order.json

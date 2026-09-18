@@ -1,0 +1,5 @@
+outs:
+- md5: d11b270d354ccad3bd806c77a85c1132
+  size: 8120
+  hash: md5
+  path: preprocessing_pipeline.joblib

@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install Linting Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black
+
+      - name: Run Black Code Format Check
+        run: |
+          black --check --diff app/ config/ src/ tests/
+
+      - name: Run Flake8 Linter
+        run: |
+          flake8 app/ config/ src/ tests/ --max-line-length=120 --extend-ignore=E203,W503
+
+  test:
+    name: Unit & Integration Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/requirements.txt
+          pip install -r requirements/requirements-dev.txt
+
+      - name: Execute Pytest Suite (A failing test stops the pipeline)
+        run: |
+          pytest -v --cov=src --cov=app
+
+  build-and-push:
+    name: Build Production Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: olist-mlops-api:latest
+          load: true
+
+      - name: Test Container Health Check
+        run: |
+          docker run -d --name test-api -p 8000:8000 olist-mlops-api:latest
+          sleep 10
+          curl -f http://localhost:8000/health || (docker logs test-api && exit 1)
+          docker stop test-api
