@@ -1,0 +1,5 @@
+# Large raw extracts stay local. Sample inference payloads are committed so
+# tests and the README examples work without `dvc pull`.
+*.csv
+*.zip
+*.parquet

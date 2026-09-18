@@ -1,0 +1,129 @@
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: olist_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-olist}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-olist}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - olist_net
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    container_name: olist_mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_artifacts:/mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
+      --port 5000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - olist_net
+
+  register-model:
+    profiles: ["register"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: olist_register_model
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_EXPERIMENT_NAME: ${MLFLOW_EXPERIMENT_NAME:-olist-late-delivery}
+    volumes:
+      - ./models:/app/models:ro
+      - mlflow_artifacts:/mlflow
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    command: ["python", "-m", "src.registry"]
+    restart: "no"
+    networks:
+      - olist_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: olist_api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      ENVIRONMENT: production
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-olist}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_EXPERIMENT_NAME: ${MLFLOW_EXPERIMENT_NAME:-olist-late-delivery}
+    volumes:
+      - ./models:/app/models:ro
+      - ./logs:/app/logs
+      - mlflow_artifacts:/mlflow
+    depends_on:
+      db:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - olist_net
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: olist_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    networks:
+      - olist_net
+
+networks:
+  olist_net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  mlflow_artifacts:

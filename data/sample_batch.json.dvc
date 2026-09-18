@@ -1,0 +1,5 @@
+outs:
+- md5: e9ed00b013ae1311cb71509f68d9cda6
+  size: 2420
+  hash: md5
+  path: sample_batch.json

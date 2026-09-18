@@ -1,0 +1,27 @@
+{
+  "model": "RandomForestClassifier (tuned)",
+  "best_params": {
+    "n_estimators": 100,
+    "min_samples_split": 10,
+    "min_samples_leaf": 2,
+    "max_depth": 15,
+    "class_weight": "balanced"
+  },
+  "validation": {
+    "f1_late": 0.3977,
+    "roc_auc": 0.813,
+    "pr_auc": 0.3617
+  },
+  "test": {
+    "f1_late": 0.3913,
+    "roc_auc": 0.8156,
+    "pr_auc": 0.3528
+  },
+  "baseline": {
+    "dummy_roc_auc": 0.5,
+    "lr_roc_auc": 0.7788
+  },
+  "accuracy": 0.8622,
+  "f1": 0.3983,
+  "roc_auc": 0.8206
+}

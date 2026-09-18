@@ -1,0 +1,10 @@
+# Development, testing, data versioning, and quality tools
+-r requirements.txt
+
+pytest==7.1.1
+pytest-cov>=4.0.0
+httpx==0.28.1
+flake8==3.9.2
+black>=22.0.0
+pre-commit>=3.0.0
+dvc>=3.0.0
