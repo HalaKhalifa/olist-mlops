@@ -7,13 +7,13 @@ from src.preprocess import preprocessor_service
 
 
 def test_preprocessor_shape_and_columns(sample_order_dict):
-    """Verify ColumnTransformer outputs exactly 145 features matching the training feature list."""
+    """Verify ColumnTransformer outputs exactly 150 features matching the training feature list."""
     df = order_dict_to_dataframe(sample_order_dict)
     transformed = preprocessor_service.transform(df)
 
     assert isinstance(transformed, np.ndarray)
-    assert transformed.shape == (1, 145)
-    assert len(preprocessor_service.feature_names) == 145
+    assert transformed.shape == (1, 150)
+    assert len(preprocessor_service.feature_names) == 150
 
 
 def test_preprocessor_handles_missing_values(sample_order_dict):
@@ -30,6 +30,6 @@ def test_preprocessor_handles_missing_values(sample_order_dict):
     df = order_dict_to_dataframe(sparse_order)
     transformed = preprocessor_service.transform(df)
 
-    assert transformed.shape == (1, 145)
+    assert transformed.shape == (1, 150)
     # Ensure no NaN remains after median/most_frequent imputation and scaling
     assert not np.isnan(transformed).any()

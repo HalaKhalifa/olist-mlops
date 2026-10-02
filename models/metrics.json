@@ -1,27 +1,30 @@
 {
-  "model": "RandomForestClassifier (tuned)",
+  "model": "HistGradientBoostingClassifier (Enhanced & Tuned)",
   "best_params": {
-    "n_estimators": 100,
-    "min_samples_split": 10,
-    "min_samples_leaf": 2,
-    "max_depth": 15,
+    "max_iter": 300,
+    "learning_rate": 0.06,
+    "max_depth": 12,
+    "min_samples_leaf": 15,
+    "l2_regularization": 1.0,
     "class_weight": "balanced"
   },
+  "decision_threshold": 0.765,
   "validation": {
-    "f1_late": 0.3977,
-    "roc_auc": 0.813,
-    "pr_auc": 0.3617
+    "f1_late": 0.4447,
+    "roc_auc": 0.8457,
+    "pr_auc": 0.466
   },
   "test": {
-    "f1_late": 0.3913,
-    "roc_auc": 0.8156,
-    "pr_auc": 0.3528
+    "f1_late": 0.4341,
+    "roc_auc": 0.8481,
+    "pr_auc": 0.462,
+    "precision_late": 0.4464,
+    "recall_late": 0.4225
   },
   "baseline": {
     "dummy_roc_auc": 0.5,
-    "lr_roc_auc": 0.7788
-  },
-  "accuracy": 0.8622,
-  "f1": 0.3983,
-  "roc_auc": 0.8206
+    "random_forest_f1": 0.3913,
+    "random_forest_roc_auc": 0.8156,
+    "random_forest_pr_auc": 0.3528
+  }
 }

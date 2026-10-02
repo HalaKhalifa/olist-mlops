@@ -16,6 +16,11 @@ order_month
 approval_lag_hrs
 carrier_lag_days
 haversine_distance_km
+is_interstate
+freight_ratio
+speed_km_per_day
+carrier_lag_ratio
+density_g_per_cm3
 customer_state_AC
 customer_state_AL
 customer_state_AM
