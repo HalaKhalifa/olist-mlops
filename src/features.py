@@ -73,10 +73,7 @@ CATEGORICAL_COLS: List[str] = [
 
 
 def haversine_km(
-    lat1: np.ndarray,
-    lon1: np.ndarray,
-    lat2: np.ndarray,
-    lon2: np.ndarray,
+    lat1: np.ndarray, lon1: np.ndarray, lat2: np.ndarray, lon2: np.ndarray,
 ) -> np.ndarray:
     """Calculate great-circle distance between two points on Earth in kilometers."""
     radius = 6371.0
@@ -176,7 +173,10 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     elif "freight_ratio" not in df.columns:
         df["freight_ratio"] = np.nan
 
-    if "haversine_distance_km" in df.columns and "estimated_delivery_days" in df.columns:
+    if (
+        "haversine_distance_km" in df.columns
+        and "estimated_delivery_days" in df.columns
+    ):
         df["speed_km_per_day"] = df["haversine_distance_km"] / (
             df["estimated_delivery_days"].clip(lower=1.0)
         )

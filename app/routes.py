@@ -199,9 +199,7 @@ def monitoring_summary() -> MonitoringSummaryResponse:
 
 
 @router.get(
-    "/metrics",
-    summary="Prometheus service and inference metrics",
-    tags=["Monitoring"],
+    "/metrics", summary="Prometheus service and inference metrics", tags=["Monitoring"],
 )
 def prometheus_metrics() -> Response:
     """Expose Prometheus metrics endpoint."""

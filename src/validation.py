@@ -138,8 +138,7 @@ class DataValidator:
 
         if "dominant_payment_type" in df.columns:
             res = gx_df.expect_column_values_to_be_in_set(
-                "dominant_payment_type",
-                self.validation_config.allowed_payment_types,
+                "dominant_payment_type", self.validation_config.allowed_payment_types,
             )
             if not _gx_success(res):
                 errors.append(
