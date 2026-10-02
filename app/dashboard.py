@@ -52,6 +52,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 # Cache prediction service
 @st.cache_resource
 def get_prediction_service():
@@ -237,9 +238,9 @@ if app_mode == "⚡ Live Order Risk Simulator":
                 "%Y-%m-%d %H:%M:%S"
             ),
             "customer_state": customer_state,
-            "customer_city": "rio de janeiro"
-            if customer_state == "RJ"
-            else "sao paulo",
+            "customer_city": (
+                "rio de janeiro" if customer_state == "RJ" else "sao paulo"
+            ),
             "customer_zip_code_prefix": "22430",
             "customer_lat": customer_lat,
             "customer_lng": customer_lng,

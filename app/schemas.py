@@ -45,13 +45,19 @@ class OrderInput(BaseModel):
         examples=["RJ"],
     )
     customer_city: Optional[str] = Field(
-        default=None, description="City of the customer", examples=["rio de janeiro"],
+        default=None,
+        description="City of the customer",
+        examples=["rio de janeiro"],
     )
     customer_zip_code_prefix: Optional[str] = Field(
-        default=None, description="Customer postal code prefix", examples=["22430"],
+        default=None,
+        description="Customer postal code prefix",
+        examples=["22430"],
     )
     customer_lat: Optional[float] = Field(
-        default=None, description="Customer geolocation latitude", examples=[-22.98197],
+        default=None,
+        description="Customer geolocation latitude",
+        examples=[-22.98197],
     )
     customer_lng: Optional[float] = Field(
         default=None,
@@ -64,16 +70,24 @@ class OrderInput(BaseModel):
         examples=["SP"],
     )
     primary_seller_city: Optional[str] = Field(
-        default=None, description="City of primary seller", examples=["sao paulo"],
+        default=None,
+        description="City of primary seller",
+        examples=["sao paulo"],
     )
     primary_seller_zip_code: Optional[float] = Field(
-        default=None, description="Seller zip code prefix", examples=[8270.0],
+        default=None,
+        description="Seller zip code prefix",
+        examples=[8270.0],
     )
     seller_lat: Optional[float] = Field(
-        default=None, description="Seller geolocation latitude", examples=[-23.56128],
+        default=None,
+        description="Seller geolocation latitude",
+        examples=[-23.56128],
     )
     seller_lng: Optional[float] = Field(
-        default=None, description="Seller geolocation longitude", examples=[-46.46197],
+        default=None,
+        description="Seller geolocation longitude",
+        examples=[-46.46197],
     )
     primary_product_category: Optional[str] = Field(
         default="outros",
@@ -86,19 +100,34 @@ class OrderInput(BaseModel):
         examples=["credit_card"],
     )
     item_count: float = Field(
-        default=1.0, ge=1.0, description="Number of items in the order", examples=[1.0],
+        default=1.0,
+        ge=1.0,
+        description="Number of items in the order",
+        examples=[1.0],
     )
     total_price: float = Field(
-        ..., ge=0.0, description="Total items value in BRL", examples=[70.9],
+        ...,
+        ge=0.0,
+        description="Total items value in BRL",
+        examples=[70.9],
     )
     avg_item_price: Optional[float] = Field(
-        default=None, ge=0.0, description="Average item value", examples=[70.9],
+        default=None,
+        ge=0.0,
+        description="Average item value",
+        examples=[70.9],
     )
     total_freight: float = Field(
-        ..., ge=0.0, description="Total freight value in BRL", examples=[14.25],
+        ...,
+        ge=0.0,
+        description="Total freight value in BRL",
+        examples=[14.25],
     )
     avg_item_freight: Optional[float] = Field(
-        default=None, ge=0.0, description="Average freight per item", examples=[14.25],
+        default=None,
+        ge=0.0,
+        description="Average freight per item",
+        examples=[14.25],
     )
     total_weight_g: Optional[float] = Field(
         default=None,
@@ -142,7 +171,9 @@ class BatchOrderInput(BaseModel):
     """Schema for batch prediction requests."""
 
     orders: List[OrderInput] = Field(
-        ..., min_length=1, description="List of orders to predict in batch",
+        ...,
+        min_length=1,
+        description="List of orders to predict in batch",
     )
 
 

@@ -25,7 +25,8 @@ def setup_logger(
         return logger
 
     formatter = logging.Formatter(
-        fmt=settings.logging.format, datefmt=settings.logging.date_format,
+        fmt=settings.logging.format,
+        datefmt=settings.logging.date_format,
     )
 
     # 1. Console Handler (stdout)

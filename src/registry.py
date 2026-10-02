@@ -14,7 +14,8 @@ from config.settings import settings
 
 
 def register_model_with_mlflow(
-    tracking_uri: Optional[str] = None, experiment_name: Optional[str] = None,
+    tracking_uri: Optional[str] = None,
+    experiment_name: Optional[str] = None,
 ) -> None:
     """Log model run, parameters, metrics, and register in MLflow."""
     import mlflow
@@ -79,7 +80,9 @@ def register_model_with_mlflow(
         model_name = settings.mlflow.model_registry_name
         logger.info(f"Logging and registering model '{model_name}'...")
         model_info = mlflow.sklearn.log_model(
-            sk_model=model, artifact_path="model", registered_model_name=model_name,
+            sk_model=model,
+            artifact_path="model",
+            registered_model_name=model_name,
         )
 
         logger.info(f"Model logged with URI: {model_info.model_uri}")
