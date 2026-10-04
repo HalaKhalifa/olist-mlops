@@ -17,7 +17,7 @@ This section provides the complete step-by-step breakdown of how each required M
 ### Step 1: Repository & Configuration
 - **Clean Structure**: The repository is cleanly partitioned into modular packages: `app/` (FastAPI), `src/` (core pipeline), `config/` (configuration), `data/` (sample payloads), `models/` (serialized artifacts), `notebooks/` (Task 2 research), `tests/` (pytest suite), `requirements/` (dependency locks), and `monitoring/` (Prometheus setup).
 - **Dynamic Settings**: No paths or operational thresholds are hardcoded. Centralized configuration in `config/config.yaml` is parsed dynamically via Pydantic in `config/settings.py` relative to `PROJECT_ROOT`, with runtime environment variable overrides via `.env`.
-- **Pinned Dependencies**: Requirements are segregated into `requirements/requirements.txt` (production inference dependencies locked to exact versions: Python 3.11, scikit-learn 1.7.0, joblib 1.5.1, FastAPI 0.115.14) and `requirements/requirements-dev.txt` (development, test, and linting tools).
+- **Pinned Dependencies**: Requirements are segregated into `requirements/requirements.txt` (production inference dependencies locked to exact versions: Python 3.10, scikit-learn 1.0.2, joblib 1.5.1, FastAPI 0.115.14) and `requirements/requirements-dev.txt` (development, test, and linting tools). Python and scikit-learn match the serialized model artifacts.
 - **Zero-Setup Documentation**: `README.md` provides clear instructions for starting the full stack with Docker Compose or running locally with `uvicorn` and `pytest`.
 
 ### Step 2: Notebooks to Python Modules
@@ -93,7 +93,7 @@ This section provides the complete step-by-step breakdown of how each required M
 
 | Requirement | Evidence |
 |---|---|
-| Structured repository, configuration, pinned requirements, README | Root layout, `config/config.yaml`, `requirements/requirements.txt`, `requirements/requirements-dev.txt`, and `README.md`. Runtime is pinned to Python 3.11, scikit-learn 1.7.0, and joblib 1.5.1 to match the persisted artifacts. |
+| Structured repository, configuration, pinned requirements, README | Root layout, `config/config.yaml`, `requirements/requirements.txt`, `requirements/requirements-dev.txt`, and `README.md`. Runtime is pinned to Python 3.10, scikit-learn 1.0.2, and joblib 1.5.1 to match the persisted artifacts. |
 | Inference pipeline loads fitted objects and registered model | `PreprocessingService` loads the frozen `ColumnTransformer`; `PredictionService` loads `models:/olist-late-delivery-model/Production` in production and falls back safely to the packaged artifact. |
 | DVC, Great Expectations, MLflow | `.dvc` metadata and `.dvc` artifact files version sample data and model artifacts; `src/validation.py` rejects invalid input before inference; `src/registry.py` tracks and registers MLflow model versions. |
 | Unit and integration tests | `tests/` covers utilities, data, features, preprocessing, model behavior, monitoring, and API routes. |

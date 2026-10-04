@@ -4,10 +4,10 @@ uvicorn[standard]==0.39.0
 pydantic==2.11.4
 # Artifacts in models/ were trained and serialized with this version.
 # Joblib/scikit-learn persistence is not backward compatible across releases.
-scikit-learn==1.7.0
+scikit-learn==1.0.2
 joblib==1.5.1
 pandas==2.2.3
-numpy==1.26.4
+numpy==1.23.5
 pyyaml==6.0.2
 prometheus-client==0.13.1
 python-dotenv==1.0.1
