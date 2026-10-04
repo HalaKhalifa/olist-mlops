@@ -1,2 +1,4 @@
 # Model binaries are versioned with DVC (see *.dvc files) and kept on disk
 # so tests, Docker, and a clean clone do not require a cloud remote.
+/best_model.joblib
+/preprocessing_pipeline.joblib

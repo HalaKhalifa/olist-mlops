@@ -1,120 +1,103 @@
-# Olist MLOps
+# Olist MLOps: Late Delivery Prediction
 
-An end-to-end MLOps project built as part of the MLOps Training 2026/2027.
-
-The project uses the Brazilian E-Commerce Public Dataset by Olist to predict whether an order will be delivered **late** or **on time**.
-
-## Project Status
-
-| Task | Description | Status |
-|------|-------------|--------|
-| Task 1 | Get the Data Into a Database | ✅ COMPLETED |
-| Task 2 | Exploratory Analysis & Modelling Notebooks | ✅ COMPLETED |
-| Task 3 | From Notebooks to Production | ✅ COMPLETED |
+[![CI/CD Pipeline](https://github.com/HalaKhalifa/olist-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/HalaKhalifa/olist-mlops/actions/workflows/ci.yml)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?logo=docker)](https://www.docker.com)
 
 ---
 
-## Task 3: Production Inference Service
+## 🎯 Business Problem
 
-Training stays in the Task 2 notebooks. This service only runs **inference**: it loads the frozen preprocessor and model, validates a new order, and returns `late` / `on_time` with a probability.
+In e-commerce, late deliveries directly damage customer satisfaction and increase support costs. Using the **Brazilian E-Commerce Public Dataset by Olist**, this project builds an end-to-end MLOps system to predict whether an order will arrive **late** or **on time** before it reaches the customer, enabling proactive operational decisions.
 
-### Architecture
+---
+
+## 📋 Project Roadmap: The 3 Tasks
+
+| Task | Title | Scope & Summary | Deliverables |
+| :--- | :--- | :--- | :--- |
+| **Task 1** | **Data Ingestion & Storage** | Designed relational database schema in PostgreSQL, set up primary/foreign keys, and loaded the multi-table Olist dataset. | [`tasks/task-01-database/`](tasks/task-01-database/) |
+| **Task 2** | **EDA & Model Training** | Performed data cleaning, feature engineering (Haversine distance, temporal lags), handled class imbalance (~8.11% late rate), and trained/tuned ML models. | [`notebooks/`](notebooks/) |
+| **Task 3** | **Production Inference Service** | Productionized the model into a containerized FastAPI service with validation firewalls, MLflow registry, Prometheus monitoring, CI/CD, and DVC artifact tracking. | [`app/`](app/), [`src/`](src/), [Task 3 Report](tasks/task-03-production/report/task_3_report.md) |
+
+---
+
+## 🏗️ Repository Structure
 
 ```
 olist-mlops/
-├── app/                         # FastAPI application
-│   ├── main.py                  #   App factory + lifespan handler
-│   ├── routes.py                #   /predict, /health, /model-info, /metrics, /monitoring
-│   ├── schemas.py               #   Pydantic request/response models
-│   └── monitoring.py            #   Prometheus middleware
-├── src/                         # Inference modules (no training)
-│   ├── predict.py               #   CLI + PredictionService
-│   ├── features.py              #   Haversine, lags, temporal features
-│   ├── preprocess.py            #   Frozen ColumnTransformer (never re-fit)
-│   ├── validation.py            #   Great Expectations firewall (reject on failure)
-│   ├── data.py                  #   Payload → DataFrame
-│   ├── registry.py              #   MLflow tracking + model registry
-│   └── monitor.py               #   Drift / latency alerts from prediction logs
-├── config/
-│   ├── config.yaml              #   Paths, validation domains, alert thresholds
-│   ├── settings.py              #   YAML + environment variables
-│   └── logging_config.py        #   Console + rotating file logs
-├── models/                      # DVC-versioned artifacts used at inference
-├── data/                        # Sample payloads (DVC-versioned)
-├── tests/                       # pytest: unit, data, model, API
-├── monitoring/prometheus.yml    # Prometheus scrape config
-├── requirements/                # Runtime vs development pins
-├── tasks/task-03-production/    # Task 3 delivery report
-├── Dockerfile
-├── docker-compose.yml
-└── .github/workflows/ci.yml
+├── app/                         # FastAPI application (routes, schemas, middleware)
+├── src/                         # Production inference pipeline (data, features, validation, predict)
+├── config/                      # Dynamic configuration and settings (config.yaml, settings.py)
+├── models/                      # Serialized models and preprocessor pipelines (DVC-tracked)
+├── data/                        # Sample input payloads for testing (DVC-tracked)
+├── notebooks/                   # Task 2 exploratory analysis & training notebooks
+├── tests/                       # Pytest test suite (unit, data, model, API tests)
+├── monitoring/                  # Prometheus scraping configuration
+├── requirements/                # Pinned runtime and development dependencies
+├── tasks/                       # Task delivery reports & documentation
+├── Dockerfile                   # Multi-stage production container
+└── docker-compose.yml           # Multi-service stack (Database, MLflow, API, Prometheus)
 ```
 
-### Quick start (clean machine)
+---
 
-Prerequisites: Python 3.11+, Docker, Docker Compose.
+## 🚀 Quick Start (Docker)
+
+Start the entire stack (PostgreSQL, MLflow, API, Prometheus) with a single command:
 
 ```bash
-git clone <repo-url>
+# 1. Clone repo & create environment file
+git clone https://github.com/HalaKhalifa/olist-mlops.git
 cd olist-mlops
 cp .env.example .env
-# Set DB_PASSWORD in .env. Do not commit .env.
 
+# 2. Build and launch all services
 docker compose up --build
 ```
 
-That single command starts PostgreSQL, MLflow artifact storage, the API, and Prometheus.
+### Service Endpoints
+- **API Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+- **MLflow UI**: [http://localhost:5000](http://localhost:5000)
+- **Prometheus UI**: [http://localhost:9090](http://localhost:9090)
 
-| Service | URL |
-|---------|-----|
-| API | http://localhost:8000 |
-| Swagger docs | http://localhost:8000/docs |
-| MLflow | http://localhost:5000 |
-| Prometheus | http://localhost:9090 |
+---
 
-Opening the API base URL redirects to the interactive Swagger documentation. The health endpoint is available at `http://localhost:8000/health`.
-
-Optional: register the champion model into MLflow after the stack is up:
+## 💻 Local Setup (Without Docker)
 
 ```bash
-docker compose --profile register run --rm register-model
-```
-
-In production, the API first tries `models:/olist-late-delivery-model/Production` and falls back to `models/best_model.joblib` inside the image / volume. Local development and tests load the same frozen local artifact directly.
-
-### Local Python (without Docker)
-
-```bash
-python -m venv .venv
+# 1. Environment & Dependencies
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements/requirements.txt
-pip install -r requirements/requirements-dev.txt
+pip install -r requirements/requirements.txt -r requirements/requirements-dev.txt
 pre-commit install
 
+# 2. Start API
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
 
-CLI inference:
+# 3. Start Interactive Showcase Dashboard (Streamlit)
+streamlit run app/dashboard.py
 
-```bash
+# 4. CLI Prediction
 PYTHONPATH=. python -m src.predict --input data/sample_order.json
-PYTHONPATH=. python -m src.monitor
 ```
 
-### API
+---
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Liveness + whether the model loaded |
-| `/model-info` | GET | Name, version, stage, metrics, feature count |
-| `/predict` | POST | Single order |
-| `/predict/batch` | POST | Batch of orders |
-| `/monitoring` | GET | Drift / latency summary from prediction logs |
-| `/metrics` | GET | Prometheus scrape endpoint |
-| `/docs` | GET | OpenAPI / Swagger |
+## 📡 API Endpoints
 
-Validation policy: Great Expectations runs **before** the model. Failures are **rejected** with HTTP 422 (they are not imputed through to a silent default). Missing coordinates and optional timestamps are allowed; the frozen imputers handle them.
+| Endpoint | Method | Purpose |
+| :--- | :---: | :--- |
+| `/health` | `GET` | Health status and model readiness |
+| `/model-info` | `GET` | Active model version, features, and metadata |
+| `/predict` | `POST` | Single order prediction (`late` / `on_time`, probability) |
+| `/predict/batch` | `POST` | Batch predictions |
+| `/monitoring` | `GET` | Drift summary against baseline ($8.11\%$) |
+| `/metrics` | `GET` | Prometheus scrape endpoint |
 
+### Example Request (`POST /predict`)
 ```bash
 curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
@@ -125,82 +108,45 @@ curl -X POST http://localhost:8000/predict \
     "order_delivered_carrier_date": "2017-10-24 19:22:45",
     "order_estimated_delivery_date": "2017-11-08 00:00:00",
     "customer_state": "RJ",
-    "customer_city": "rio de janeiro",
-    "customer_zip_code_prefix": "22430",
-    "customer_lat": -22.98197,
-    "customer_lng": -43.21999,
     "primary_seller_state": "SP",
-    "primary_seller_city": "sao paulo",
-    "primary_seller_zip_code": 8270.0,
-    "seller_lat": -23.56128,
-    "seller_lng": -46.46197,
-    "primary_product_category": "telephony",
-    "dominant_payment_type": "credit_card",
-    "item_count": 1.0,
     "total_price": 70.9,
-    "avg_item_price": 70.9,
     "total_freight": 14.25,
-    "avg_item_freight": 14.25,
-    "total_weight_g": 250.0,
-    "total_volume_cm3": 1280.0,
-    "num_sellers": 1.0,
-    "total_payment_value": 85.15,
-    "payment_installments_max": 3.0,
-    "payment_transactions_count": 1.0
+    "item_count": 1.0
   }'
 ```
 
-Expected shape of the response: `prediction`, `label`, `late_probability`, `model_version`, `latency_ms`.
-
-On the sample order above the shipped frozen artifacts produce class `0` / `on_time`, late probability `0.4595`.
-
-### Tests
-
-```bash
-pytest tests/ -v
-pytest tests/ --cov=src --cov=app --cov-report=term-missing
+### Example Response
+```json
+{
+  "order_id": "9e8835f613d3d61b5c4aeae2550b893a",
+  "prediction": 0,
+  "label": "on_time",
+  "late_probability": 0.4595,
+  "model_name": "olist-late-delivery-model",
+  "model_version": "1",
+  "latency_ms": 12.48
+}
 ```
-
-A failing test stops CI. Break the payload (negative `total_price`, leakage column `is_late`, invalid state) and the service returns 422.
-
-### DVC
-
-Artifacts are versioned with DVC. A local remote is configured at `dvc-storage/` so you can run:
-
-```bash
-dvc add models/best_model.joblib models/preprocessing_pipeline.joblib
-dvc add data/sample_order.json data/sample_batch.json
-dvc push
-dvc pull
-```
-
-Sample payloads and model files are also kept in the working tree so `pytest` and `docker compose` work without a cloud remote.
-
-### Pre-commit and CI/CD
-
-```bash
-pre-commit install
-pre-commit run --all-files
-```
-
-On every push/PR: Black format check → flake8 → pytest. On push to `main`, the production image is built and pushed to GHCR (`ghcr.io/<owner>/<repo>`).
-
-### Monitoring
-
-- Prometheus metrics: request count, latency, error rate, predicted-class distribution.
-- Prediction audit log: `logs/predictions.jsonl` (input, output, latency, model version).
-- Alert policy: `docs/monitoring_and_alerting.md`.
-
-### Task 3 verification
-
-The running stack was verified with a healthy PostgreSQL, MLflow, API, and Prometheus service. The API accepted both single and batch sample predictions, rejected invalid data with HTTP 422, exposed Prometheus metrics, and loaded model version 1 from the MLflow Production registry. See [the Task 3 report](tasks/task-03-production/report/task_3_report.md) for the full definition-of-done checklist and evidence.
 
 ---
 
-## Dataset
+## 🧪 Testing & CI/CD
 
-The raw Olist dump is not stored here. See `tasks/task-01-database` for database setup.
+```bash
+# Run pytest with test coverage
+pytest tests/ -v --cov=src --cov=app
 
-## Goal
+# Run linting and format checks
+black --check app config src tests
+flake8 app config src tests
+```
 
-Build an end-to-end machine learning and MLOps workflow around late delivery prediction.
+- **CI/CD**: GitHub Actions runs format checks, linting, tests, container smoke tests, and publishes images to GHCR on `main`.
+
+---
+
+## 📊 Monitoring & Alerts
+
+- **Drift Detection**: Compares live prediction late-rate against the $8.11\%$ baseline.
+- **Audit Logs**: All requests recorded in `logs/predictions.jsonl` for delayed reconciliation when actual delivery dates arrive.
+- **Alert Strategy**: Outlined in [`docs/monitoring_and_alerting.md`](docs/monitoring_and_alerting.md).

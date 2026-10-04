@@ -21,13 +21,13 @@ def test_api_health_check(api_client):
 
 
 def test_api_model_info(api_client):
-    """GET /model-info should return 200 OK with model metadata and 145 features."""
+    """GET /model-info should return 200 OK with model metadata and 150 features."""
     response = api_client.get("/model-info")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["model_name"] == "olist-late-delivery-model"
     assert data["model_version"] == "1"
-    assert data["total_features"] == 145
+    assert data["total_features"] == 150
     assert "validation_metrics" in data
 
 
