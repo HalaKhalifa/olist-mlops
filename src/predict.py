@@ -67,6 +67,20 @@ class PredictionService:
                 f"Attempting to load model from MLflow Model Registry: {model_uri}"
             )
             model = mlflow.sklearn.load_model(model_uri)
+            try:
+                from mlflow.tracking import MlflowClient
+
+                versions = MlflowClient(tracking_uri=tracking_uri).get_latest_versions(
+                    registry_name, stages=[settings.mlflow.model_stage]
+                )
+                if versions:
+                    self.model_version = str(
+                        max(versions, key=lambda version: int(version.version)).version
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Could not determine the loaded MLflow model version: {e}"
+                )
             logger.info("Successfully loaded model from MLflow Model Registry.")
             return model
         except Exception as e:
