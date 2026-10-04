@@ -71,6 +71,7 @@ def health_check() -> HealthResponse:
 )
 def get_model_info() -> ModelInfoResponse:
     """Return model type, hyperparameters, evaluation metrics, and feature count."""
+    _ = prediction_service.model
     metrics_data: Dict[str, Any] = {}
     if settings.model.metrics_path.exists():
         metrics_data = load_json(settings.model.metrics_path)
@@ -79,8 +80,8 @@ def get_model_info() -> ModelInfoResponse:
 
     return ModelInfoResponse(
         model_name=settings.model.name,
-        model_version=settings.model.version,
-        model_stage=settings.model.stage,
+        model_version=prediction_service.model_version,
+        model_stage=prediction_service.model_stage,
         model_type=metrics_data.get("model", "RandomForestClassifier"),
         total_features=total_features,
         hyperparameters=metrics_data.get("best_params", {}),

@@ -20,6 +20,7 @@ def register_model_with_mlflow(
     """Log model run, parameters, metrics, and register in MLflow."""
     import mlflow
     import mlflow.sklearn
+    import sklearn
 
     uri = tracking_uri or os.getenv("MLFLOW_TRACKING_URI", settings.mlflow.tracking_uri)
     exp_name = experiment_name or settings.mlflow.experiment_name
@@ -43,16 +44,22 @@ def register_model_with_mlflow(
 
     model = joblib.load(model_path)
 
-    with mlflow.start_run(run_name="production-tuned-random-forest") as run:
+    model_type = type(model).__name__
+    with mlflow.start_run(run_name=f"production-{model_type}") as run:
         run_id = run.info.run_id
         logger.info(f"Started MLflow Run: {run_id}")
 
-        # Log parameters
-        params = metrics_data.get("best_params", {})
-        for k, v in params.items():
-            mlflow.log_param(k, v)
-        mlflow.log_param("model_type", "RandomForestClassifier")
-        mlflow.log_param("class_weight", "balanced")
+        # Log the estimator's actual parameters; metrics.json may describe a
+        # previous training run and must not override the packaged model.
+        for name, value in model.get_params(deep=False).items():
+            if value is not None:
+                mlflow.log_param(name, value)
+        mlflow.log_param("model_type", model_type)
+        mlflow.log_param("scikit_learn_version", sklearn.__version__)
+
+        decision_threshold = metrics_data.get("decision_threshold")
+        if decision_threshold is not None:
+            mlflow.log_param("decision_threshold", decision_threshold)
 
         # Log metrics
         val_metrics = metrics_data.get("validation", {})
@@ -92,9 +99,14 @@ def register_model_with_mlflow(
             from mlflow.tracking import MlflowClient
 
             client = MlflowClient(tracking_uri=uri)
-            latest_versions = client.get_latest_versions(model_name)
-            if latest_versions:
-                version = latest_versions[-1].version
+            registered_versions = client.search_model_versions(
+                f"name='{model_name}'"
+            )
+            new_versions = [
+                version for version in registered_versions if version.run_id == run_id
+            ]
+            if new_versions:
+                version = max(new_versions, key=lambda item: int(item.version)).version
                 client.transition_model_version_stage(
                     name=model_name,
                     version=version,
