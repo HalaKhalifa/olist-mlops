@@ -25,10 +25,10 @@ jobs:
       - name: Install Linting Tools
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black
+          pip install flake8 "black==25.11.0"
 
       - name: Run Black Code Format Check
-        run: black --check --diff app/ config/ src/ tests/
+        run: black --check --diff --target-version py39 app/ config/ src/ tests/
 
       - name: Run Flake8 Linter
         run: flake8 app/ config/ src/ tests/ --max-line-length=120 --extend-ignore=E203,W503
