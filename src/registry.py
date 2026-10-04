@@ -99,9 +99,7 @@ def register_model_with_mlflow(
             from mlflow.tracking import MlflowClient
 
             client = MlflowClient(tracking_uri=uri)
-            registered_versions = client.search_model_versions(
-                f"name='{model_name}'"
-            )
+            registered_versions = client.search_model_versions(f"name='{model_name}'")
             new_versions = [
                 version for version in registered_versions if version.run_id == run_id
             ]
